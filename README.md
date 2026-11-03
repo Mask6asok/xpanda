@@ -37,6 +37,7 @@ The project is split into five yarn-workspace packages under `packages/`:
 | `xpanda-core` | `.abc` / `.hap` parsing, disassembly, decompilation and the optimizer — the library everything else builds on |
 | `xpanda-cli` | command line interface (`decompile` / `unpack-index` / `dump-asm` / `dump`) |
 | `xpanda-mcp` | MCP server (stdio) for AI client integration |
+| `xpanda-index` | Persistent SQLite code/xref indexes and a read-only MCP server; see [package docs](packages/xpanda-index/README.md) |
 | `xpanda-web` | browser UI (React + Vite, pure frontend) |
 | `xpanda-asm` | load, modify (replace method code / add methods, strings), dump classes and re-emit `.abc` files |
 

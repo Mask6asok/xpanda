@@ -1,0 +1,25 @@
+{
+  "name": "xpanda-index",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Persistent SQLite code and cross-reference indexes with a read-only MCP server (Node 22.13+)",
+  "license": "Apache-2.0",
+  "exports": {
+    ".": "./src/code-index-db.mjs",
+    "./build": "./src/code-index-build.mjs",
+    "./cli": "./src/code-index.mjs",
+    "./mcp": "./src/code-index-mcp.mjs"
+  },
+  "scripts": {
+    "index": "node src/code-index.mjs",
+    "mcp": "node src/code-index-mcp.mjs",
+    "test": "node --import tsx --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.1",
+    "xpanda-core": "*",
+    "zod": "^4.6.7",
+    "tsx": "^4.7.0"
+  }
+}

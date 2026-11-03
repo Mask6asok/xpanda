@@ -7,6 +7,10 @@
 export { PandaFile, ENTRY_FUNCTION_MAIN } from "./file/PandaFile";
 export { PandaClass } from "./file/clazz/PandaClass";
 export { PandaMethod } from "./file/method/PandaMethod";
+export { PandaString } from "./file/desc/PandaString";
+export { PandaField } from "./file/field/PandaField";
+export { PandaLiteralArray } from "./file/literal/PandaLiteralArray";
+export { PandaInstructionID } from "./disasm/PandaInstruction";
 export { PandaDecompiler } from "./PandaDecompiler";
 export { PandaLexical } from "./disasm/PandaLexical";
 export { PandaDisAssembler } from "./disasm/PandaDisAssembler";
