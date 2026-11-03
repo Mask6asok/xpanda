@@ -9,6 +9,7 @@ import { SimplifyExport } from "../src/simplify/SimplifyExport";
 import { NullishCoalescingSimplify } from "../src/simplify/NullishCoalescingSimplify";
 import { SyntaxRewriteSimplify } from "../src/simplify/SyntaxRewriteSimplify";
 import { restoreGotoLoops } from "../src/simplify/GotoLoopRestore";
+import { flattenRethrowTryChains } from "../src/decompiler/RethrowTryFlatten";
 import { HapFile } from "../src/hap/HapFile";
 import type { PandaClass } from "../src/file/clazz/PandaClass";
 import { ResourceIndexFile } from "../src/res/ResourceIndexFile";
@@ -2413,6 +2414,136 @@ function verifyAmclDefaultClassExport(clazz: PandaClass, code: string): void {
     }
     if (/\bexport default\s+EntryAbility\b/.test(code)) {
         throw new Error(`EntryAbility: 仍残留独立的 export default 语句\n${code}`);
+    }
+}
+
+/**
+ * 回归:带装饰器类的命名导出语句不能被删除(issue7 的 StrategyWebInjectJS)。
+ *
+ * ArkTS 的 `@Sendable class Name {}` + `export { Name };` 无法内联成
+ * `export @Sendable class Name {}`(装饰器必须写在 export 之前),所以保留独立的
+ * `export { Name };` 语句。旧实现先把 specifier 从 keptSpecifiers 里移走再跳过
+ * 内联,`keptSpecifiers.length === 0` 时把整条 export 语句 splice 掉,模块不再
+ * 导出该类。没有装饰器的类仍要内联成 `export class Name {}`。
+ */
+function verifyDecoratedClassNamedExport(): void {
+    const program = NodeFactory.parse(`
+@Sendable
+class EnableRule {
+  enableScenes;
+  constructor(p0) {
+    this.enableScenes = p0;
+  }
+}
+class Plain {
+  value;
+}
+export { EnableRule };
+export { Plain };
+`);
+    SimplifyExport.simplify(program);
+    const code = NodeFactory.generate(program);
+    NodeFactory.parse(code);
+    if (!code.includes("@Sendable\nclass EnableRule {")) {
+        throw new Error(`带装饰器的类声明未保留装饰器\n${code}`);
+    }
+    if (!code.includes("export { EnableRule };")) {
+        throw new Error(`带装饰器的类丢失命名导出语句\n${code}`);
+    }
+    if (!code.includes("export class Plain {")) {
+        throw new Error(`无装饰器的类未内联成 export class\n${code}`);
+    }
+    if (/export\s*\{\s*Plain\s*\}/.test(code)) {
+        throw new Error(`无装饰器的类仍残留独立 export 语句\n${code}`);
+    }
+}
+
+/**
+ * 回归:模块级 class 定义的 rethrow try 壳不能层层嵌套。
+ *
+ * ArkTS 给每个模块级 class 定义生成一个词法环境保护壳
+ * `try { …class… } catch (e) { acc = e; throw acc }`;结构化归约把后续语句并进
+ * try 体后,这些壳会一层套一层——issue7 的 liverevlink-impl 有 80 层,每层给后面
+ * 所有行加 2 格缩进,raw 输出(50MB)的 71.8% 是行首空白。
+ * `flattenRethrowTryChains` 把内层壳的语句并进外层块,嵌套层数归零。
+ * 内层 try 不在外层块的末尾、或它的块级声明会被外层前面的语句看到时保持原样。
+ */
+function verifyRethrowTryFlattening(): void {
+    const countTries = (node: TYPE.Node): number => {
+        let count = TYPE.isTryStatement(node) ? 1 : 0;
+        const keys = (TYPE.VISITOR_KEYS as any)[node.type] as string[] | undefined;
+        if (keys) {
+            for (const key of keys) {
+                const value = (node as any)[key];
+                if (Array.isArray(value)) {
+                    for (const child of value) if (child && typeof child.type === "string") count += countTries(child);
+                } else if (value && typeof value.type === "string") {
+                    count += countTries(value);
+                }
+            }
+        }
+        return count;
+    };
+    const nested = NodeFactory.parse(`
+try {
+  a();
+  try {
+    let slot = make();
+    b(slot);
+  } catch (catchAcc) {
+    acc = catchAcc;
+    throw acc;
+  }
+} catch (catchAcc) {
+  acc = catchAcc;
+  throw acc;
+}
+`);
+    flattenRethrowTryChains(nested);
+    if (countTries(nested) !== 1) {
+        throw new Error(`嵌套 rethrow try 未合并\n${NodeFactory.generate(nested)}`);
+    }
+    const flattenedBody = (nested.body[0] as TYPE.TryStatement).block.body;
+    if (flattenedBody.length !== 3) {
+        throw new Error(`合并后语句数不对(${flattenedBody.length})\n${NodeFactory.generate(nested)}`);
+    }
+    const blocked = NodeFactory.parse(`
+try {
+  use(slot);
+  try {
+    let slot = make();
+    b(slot);
+  } catch (catchAcc) {
+    acc = catchAcc;
+    throw acc;
+  }
+} catch (catchAcc) {
+  acc = catchAcc;
+  throw acc;
+}
+`);
+    flattenRethrowTryChains(blocked);
+    if (countTries(blocked) !== 2) {
+        throw new Error(`声明被外层引用时不应合并\n${NodeFactory.generate(blocked)}`);
+    }
+    const notLast = NodeFactory.parse(`
+try {
+  try {
+    let slot = make();
+    b(slot);
+  } catch (catchAcc) {
+    acc = catchAcc;
+    throw acc;
+  }
+  after();
+} catch (catchAcc) {
+  acc = catchAcc;
+  throw acc;
+}
+`);
+    flattenRethrowTryChains(notLast);
+    if (countTries(notLast) !== 2) {
+        throw new Error(`内层 try 不是块末尾时不应合并\n${NodeFactory.generate(notLast)}`);
     }
 }
 
@@ -5988,6 +6119,14 @@ async function main(): Promise<void> {
 
     console.log("[test] simplify redundant rethrow catch");
     verifyRedundantRethrowCatchRemoval();
+    console.log("    ok");
+
+    console.log("[test] simplify decorated class named export");
+    verifyDecoratedClassNamedExport();
+    console.log("    ok");
+
+    console.log("[test] rethrow try chain flattening");
+    verifyRethrowTryFlattening();
     console.log("    ok");
 
     console.log("[test] simplify hole sentinel cleanup");
