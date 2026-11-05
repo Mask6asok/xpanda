@@ -21,6 +21,7 @@
     "web": "yarn workspace xpanda-web dev",
     "index": "yarn workspace xpanda-index index",
     "index:mcp": "yarn workspace xpanda-index mcp",
+    "mcp:unified": "yarn workspace xpanda-index unified-mcp",
     "test:index": "yarn workspace xpanda-index test"
   }
 }

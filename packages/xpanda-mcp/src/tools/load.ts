@@ -49,6 +49,7 @@ export function registerLoadTools(server: McpServer, registry: Registry): void {
                 cached,
                 bytecodeVersion: Array.from(header.version).join("."),
                 checksum: "0x" + (header.checksum >>> 0).toString(16),
+                checksumMismatch: session.pandaFile.checksumMismatch ?? null,
                 fileSizeBytes: session.pandaFile.data.byteLength,
                 classCount: classNames.length,
                 foreignClassCount: session.pandaFile.foreignPandaClasses.length,

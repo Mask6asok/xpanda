@@ -61,7 +61,7 @@ JavaScript 源码(落盘 / stdout / 编程 API)
 ### 3.1 解析流程(`PandaFile.ts`)
 
 1. **Header**(`desc/Header.ts`):magic `PANDA\0\0\0`(8 字节),60 字节头,包含版本、文件大小、foreign class 偏移/大小、类索引偏移、lnp 信息、字面量数组与索引区偏移。
-2. **校验和**:对字节 `[12, len)` 做 Adler32,掩码 `0x0fffffff`,与 `header.checksum` 比较。不匹配抛 `PandaParseException`("may be encrypted")。
+2. **校验和**: Adler32 over `[12, len)`, masked with `0x0fffffff`, compared against `header.checksum`. Strict construction throws `PandaChecksumException` on mismatch. Explicit `lenientChecksum: true` records `checksumMismatch` and preserves input bytes; a mismatch alone does not establish encryption.
 3. **lnp 偏移表**:`numLnps` × 4 字节条目,包装为 `Offset` 对象。
 4. **索引区**(`desc/IndexHeader.ts`,即 RegionHeader):`numIndexes` × 40 字节头,各自持有起止偏移与 class/method/field/proto 索引(size + offset)。自字节码 **12.0.1.0** 起 field/proto 索引以 `0xffffffff` 作废(两者均为 `null`)。另承载用于标记模块记录字面量数组的 module-literal 集合。
 5. **Foreign classes**:顺序遍历 foreign class 区域;每个 `PandaClass` 记录已消费字节数以便推进。

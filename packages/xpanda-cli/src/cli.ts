@@ -7,6 +7,7 @@ import {
     PandaClass,
     PandaDecompiler,
     PandaFile,
+    parsePandaFileForAnalysis,
     ResourceIndexFile,
     ZipFile,
 } from "xpanda-core";
@@ -17,6 +18,15 @@ import { DecompileProgress } from "./progress";
 
 /** Old-space cap for the decompile process, in MiB (8 GiB). */
 const CLI_HEAP_MB = 8 * 1024;
+
+function parseAnalysisAbc(data: Uint8Array): PandaFile {
+    const file = parsePandaFileForAnalysis(data);
+    if (file.checksumMismatch) {
+        const { expected, calculated } = file.checksumMismatch;
+        console.error(`warning: ABC checksum mismatch (header=${expected} calculated=${calculated}); continued with lenient checksum validation`);
+    }
+    return file;
+}
 
 /**
  * `--max-old-space-size` is applied only at process start. Re-exec once when
@@ -189,7 +199,7 @@ async function decompileAbcData(
     classOutDir: string,
     label: string,
 ): Promise<string[]> {
-    const pandaFile = new PandaFile(data);
+    const pandaFile = parseAnalysisAbc(data);
     const classes = pandaFile.getAllClasses();
     if (!options.stdout) fs.mkdirSync(classOutDir, { recursive: true });
 
@@ -329,7 +339,7 @@ function dumpClassAsm(pandaClass: PandaClass): string {
 
 /** 反汇编一个 abc 的全部类,.asm 文件落盘到 classOutDir,返回按类序拼接的输出段(--stdout 用) */
 function dumpAsmAbcData(data: Uint8Array, options: AsmOptions, classOutDir: string): string[] {
-    const pandaFile = new PandaFile(data);
+    const pandaFile = parseAnalysisAbc(data);
     const classes = pandaFile.getAllClasses();
     if (!options.stdout) fs.mkdirSync(classOutDir, { recursive: true });
     console.error(`classes: ${classes.length}`);

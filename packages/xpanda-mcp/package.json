@@ -4,11 +4,12 @@
   "description": "xpanda MCP Server - lets AI clients analyze HarmonyOS .abc / .hap files via Model Context Protocol",
   "main": "./src/server.ts",
   "exports": {
-    ".": "./src/server.ts"
+    ".": "./src/server.ts",
+    "./tools": "./src/tools.ts"
   },
   "scripts": {
     "mcp": "tsx src/server.ts",
-    "test:mcp": "tsx scripts/test-mcp.ts",
+    "test:mcp": "tsx scripts/test-mcp.ts && node --import tsx --test scripts/checksum.test.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

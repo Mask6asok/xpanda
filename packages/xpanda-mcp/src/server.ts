@@ -31,24 +31,11 @@ console.error = writeToStderr;
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { Registry } from "./registry";
-import { registerLoadTools } from "./tools/load";
-import { registerBrowseTools } from "./tools/browse";
-import { registerDecompileTools } from "./tools/decompile";
-import { registerDisasmTools } from "./tools/disasm";
-import { registerStringTools } from "./tools/strings";
-import { registerHapTools } from "./tools/hap";
+import { registerXpandaTools } from "./tools";
 
 async function main(): Promise<void> {
     const server = new McpServer({ name: "xpanda", version: "1.0.0" });
-    const registry = new Registry();
-
-    registerLoadTools(server, registry);
-    registerBrowseTools(server, registry);
-    registerDecompileTools(server, registry);
-    registerDisasmTools(server, registry);
-    registerStringTools(server, registry);
-    registerHapTools(server, registry);
+    registerXpandaTools(server);
 
     await server.connect(new StdioServerTransport());
     writeToStderr("xpanda-mcp: stdio server started");

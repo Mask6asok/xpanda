@@ -61,7 +61,7 @@ Dependency direction: `cli / PandaDecompiler → decompiler → disasm → file 
 ### 3.1 Parse flow (`PandaFile.ts`)
 
 1. **Header** (`desc/Header.ts`): magic `PANDA\0\0\0` (8 bytes), 60-byte header with version, file size, foreign class offset/size, class index offset, lnp info, literal arrays, and index section offset.
-2. **Checksum**: Adler32 over bytes `[12, len)`, masked with `0x0fffffff`, compared against `header.checksum`. Mismatch throws `PandaParseException` ("may be encrypted").
+2. **Checksum**: Adler32 over bytes `[12, len)`, masked with `0x0fffffff`, compared against `header.checksum`. Strict construction throws `PandaChecksumException` on mismatch. Analysis consumers can explicitly retry with `lenientChecksum: true`; the difference is recorded in `checksumMismatch` without rewriting input bytes. A mismatch alone does not establish encryption.
 3. **lnp offset table**: `numLnps` × 4-byte entries wrapped in `Offset` objects.
 4. **Index regions** (`desc/IndexHeader.ts`, "RegionHeader"): `numIndexes` × 40-byte headers, each holding start/end offsets and class/method/field/proto index (size + offset). From bytecode **12.0.1.0** the field/proto indexes are invalidated with `0xffffffff` (both become `null`). Also hosts the module-literal set used to mark module-record literal arrays.
 5. **Foreign classes**: sequential walk of the foreign class area; each `PandaClass` records the bytes consumed so it can advance.

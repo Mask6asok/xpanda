@@ -8,6 +8,13 @@ export class PandaParseException extends Error {
     }
 }
 
+export class PandaChecksumException extends PandaParseException {
+    constructor(readonly expected: number, readonly calculated: number) {
+        super(`ABC checksum mismatch: header=${expected} calculated=${calculated}`);
+        this.name = "PandaChecksumException";
+    }
+}
+
 export class PandaDecompileException extends Error {
     constructor(message: string) {
         super(message);

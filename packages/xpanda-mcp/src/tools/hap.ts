@@ -51,6 +51,7 @@ export function registerHapTools(server: McpServer, registry: Registry): void {
                 entry: entryName,
                 cached,
                 bytecodeVersion: Array.from(session.pandaFile.header.version).join("."),
+                checksumMismatch: session.pandaFile.checksumMismatch ?? null,
                 classCount: classNames.length,
                 classesPreview: classNames.slice(0, 50),
                 previewTruncated: classNames.length > 50,

@@ -5,11 +5,12 @@
  */
 import * as fs from "fs";
 import * as path from "path";
-import { PandaClass, PandaFile } from "xpanda-core";
+import { PandaClass, parsePandaFileForAnalysis } from "xpanda-core";
+import type { PandaFile } from "xpanda-core";
 
 /** 从磁盘读取 .abc 文件并解析 */
 export function loadPandaFile(filePath: string): PandaFile {
-    return new PandaFile(new Uint8Array(fs.readFileSync(filePath)));
+    return parsePandaFileForAnalysis(new Uint8Array(fs.readFileSync(filePath)));
 }
 
 /** 按类名落盘(demangle 规则:Lpkg/Name; → outDir/pkg/Name.js,中间段成为目录) */

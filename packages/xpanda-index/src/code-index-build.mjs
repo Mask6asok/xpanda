@@ -4,7 +4,7 @@ import {createRequire} from 'node:module';
 import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
 import {DatabaseSync} from 'node:sqlite';
-import {PandaFile} from 'xpanda-core';
+import {parsePandaFileForAnalysis} from 'xpanda-core';
 import {loadIndexInput} from './code-index-input.mjs';
 import {INDEX_VERSION,SCHEMA,indexStats,uniqueDefinitions} from './code-index-db.mjs';
 import {referenceWriter} from './code-index-xref-build.mjs';
@@ -26,11 +26,13 @@ export async function buildCodeIndex(directory,options={}){
   const putReferences=referenceWriter(db);
   const entryNames=entries.map(entry=>entry.name);
   let duplicateClasses=0,duplicateMethods=0;
+  const checksumMismatches=[];
   for(const entry of entries){
    const bytes=entry.read(),abcHash=hash(bytes),expected=inventory.abcEntries.find(row=>row.entry===entry.name);
    if(!expected||expected.sha256!==abcHash)throw new Error(`ABC identity mismatch: ${entry.name}`);
    putEntry.run(entry.name,abcHash);
-   const panda=new PandaFile(bytes);
+   const panda=parsePandaFileForAnalysis(bytes);
+   if(panda.checksumMismatch)checksumMismatches.push({entry:entry.name,...panda.checksumMismatch});
    const classes=uniqueDefinitions(panda.getAllClasses());duplicateClasses+=classes.duplicates;
    for(const clazz of classes.definitions){
     const record=clazz.name.content;
@@ -72,6 +74,7 @@ export async function buildCodeIndex(directory,options={}){
   const decompilation=quality?{status:quality.status,records_total:quality.records_total,records_decompiled:quality.records_decompiled,methods_total:quality.methods_total,semantic_completeness:'unknown'}:null;
   const crossReferences={version:1,identity:'ABC entry + target kind + byte offset',scope:'successfully_disassembled_instruction_operands_and_reachable_literal_objects',dynamic_calls:'unresolved',dispatch_analysis:'not_built',literal_expansion:'each_array_once_per_operand'};
   const metadata={schema_version:INDEX_VERSION,artifact_sha256:inventory.sha256,input_mode:inventory.input_mode??'compiled_hap',inventory_sha256:inventoryText===null?null:hash(inventoryText),xpanda_version:version,indexer_version:JSON.parse(await fs.readFile(new URL('../package.json',import.meta.url),'utf8')).version,source_mode:standalone?'not_provided':'inventory_verified',call_graph:'not_built',cross_references:crossReferences,string_scope:'xpanda_parsed_strings',semantic_completeness:'unknown',duplicate_class_records:duplicateClasses,duplicate_method_records:duplicateMethods,decompilation,build_ms:Math.round(performance.now()-started)};
+  metadata.checksum_mismatches=checksumMismatches;
   const putMeta=db.prepare('INSERT INTO metadata VALUES (?,?)');
   for(const [key,value] of Object.entries(metadata))putMeta.run(key,JSON.stringify(value));
   if(root&&hash(await fs.readFile(resolve(root,'inventory.json')))!==metadata.inventory_sha256)throw new Error('Inventory changed during indexing');

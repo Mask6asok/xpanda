@@ -4,6 +4,13 @@
 
 ## Quick Start
 
+For a unified connection with both these live tools and persistent code/xref queries,
+run `node packages/xpanda-index/src/unified-mcp.mjs --root /path/analysis-sessions`
+from the repository root (Node 22.13+). It preserves all twenty existing tool names.
+`--read-only` exposes only the ten index tools. See the
+[index package](../packages/xpanda-index/README.md) for database scope and pagination.
+The original entry below remains available for live-only clients.
+
 ```bash
 yarn install                      # install dependencies (including @modelcontextprotocol/sdk)
 yarn mcp                          # start directly (stdio transport)
@@ -130,6 +137,10 @@ decompile pipeline therefore never leak into the protocol layer.
 `abc_disassemble_method` outputs at most 1500 instructions by default, adjustable via `maxInstructions` (cap 5000).
 
 ### Degradation Observability
+
+Analysis loading (`abc_load` and `hap_read_abc`) retries a checksum mismatch once with checksum enforcement disabled. Both responses expose `checksumMismatch: { expected, calculated }` (or `null`), where `expected` is the header value. A successful parse does not establish input integrity or identify why the checksum differs. Invalid structures still fail; original input bytes are never rewritten.
+
+The core library keeps strict construction by default: `new PandaFile(data)` throws `PandaChecksumException` on mismatch. Analysis consumers can explicitly use `parsePandaFileForAnalysis(data)` or `{ lenientChecksum: true }` and inspect `file.checksumMismatch`. CLI decompilation writes a warning to stderr; persistent indexes expose entry-level `checksum_mismatches` in metadata. Bytecode writing and patching retain their strict input policy.
 
 When structured analysis fails, it degrades to `SimpleAnalysis` linear output, recognizable by `decompiler_goto` in the source.
 `abc_decompile_class` returns `degraded=true/false` in the header comment, so agents can automatically switch to

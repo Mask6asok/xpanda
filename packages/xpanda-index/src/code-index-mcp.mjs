@@ -28,13 +28,13 @@ function boundedResult(result,maxChars){
  return {content:[{type:'text',text}],structuredContent:result};
 }
 
-export async function startCodeIndexMcp(args=process.argv.slice(2)){
+export function createCodeIndexMcp(args=process.argv.slice(2),identity={name:'hap-code-index',version:'1.1.0'}){
  const {values}=parseArgs({args,options:{root:{type:'string'},database:{type:'string',multiple:true},'max-output-chars':{type:'string'}}});
  const maxChars=Number(values['max-output-chars']??65536);
  if(!Number.isInteger(maxChars)||maxChars<1024||maxChars>262144)throw new Error('max-output-chars must be 1024..262144');
  const root=values.root??(values.database?.length?null:resolve('.hap-sec-analysis'));
  const catalog=new CodeIndexCatalog({root,databases:values.database??[]});
- const server=new McpServer({name:'hap-code-index',version:'1.1.0'},{instructions:'Read-only navigation of persisted HarmonyOS code indexes. Start with code_index_list. Use xrefs/uses for exact operand references; definitions and property-name strings are not proven call edges. Dynamic call targets remain unresolved. Cite original evidence for security claims. Source offsets are zero-based; returned source line numbers are one-based. Use next_offset to continue paginated reads.'});
+ const server=new McpServer(identity,{instructions:'Start with code_index_list for persisted indexes. Live abc_* tools, when available, use fileId from abc_load; HAP entries require hap_read_abc. Index IDs and live file IDs are separate. Use xrefs/uses for exact operand references; definitions and property-name strings are not proven call edges. Dynamic call targets remain unresolved. Cite original evidence for security claims. Source offsets are zero-based; returned source line numbers are one-based. Use next_offset to continue paginated reads.'});
  const index_id=z.string().min(1).max(128),text=z.string().max(8192),entry=text.optional();
  const page={limit:z.number().int().min(1).max(200).default(30),offset:z.number().int().min(0).max(Number.MAX_SAFE_INTEGER).default(0)};
  const common={index_id,query:text.default(''),entry,...page};
@@ -66,7 +66,12 @@ export async function startCodeIndexMcp(args=process.argv.slice(2)){
  register('code_index_xrefs','Find incoming references to an exact ABC entity. target_offset is its entity byte offset, not a pagination offset. Returns referencing methods, instruction PC and relation; method definitions are not calls. V1 indexes require a rebuild.',{index_id,entry:text.min(1),target_kind:z.enum(TARGET_KINDS),target_offset:address,relation,...page},args=>query('xrefs',args,[args.target_kind,args.target_offset]));
  register('code_index_uses','List outgoing operand references and unresolved dynamic call sites for an exact method identity returned by methods. instruction_index locates a site in code_index_method pagination. target_kind/relation optionally filter results.',{index_id,entry:text.min(1),class_offset:address,method_offset:address,target_kind:z.enum(TARGET_KINDS).optional(),relation,...page},args=>query('uses',args));
  server.server.onclose=()=>catalog.close();
- for(const signal of ['SIGINT','SIGTERM'])process.once(signal,()=>{catalog.close();process.exit(0);});
+ return {server,close:()=>catalog.close()};
+}
+
+export async function startCodeIndexMcp(args=process.argv.slice(2)){
+ const {server,close}=createCodeIndexMcp(args);
+ for(const signal of ['SIGINT','SIGTERM'])process.once(signal,()=>{close();process.exit(0);});
  await server.connect(new StdioServerTransport());
 }
 

@@ -4,7 +4,8 @@
  * Node 专属能力不在本包:并行 simplify 在 xpanda-cli(src/parallel),磁盘 IO 在 cli / mcp 各自的 src/io.ts。
  * @Author: jmp0
  */
-export { PandaFile, ENTRY_FUNCTION_MAIN } from "./file/PandaFile";
+export { PandaFile, ENTRY_FUNCTION_MAIN, parsePandaFileForAnalysis } from "./file/PandaFile";
+export type { PandaFileOptions, ChecksumMismatch } from "./file/PandaFile";
 export { PandaClass } from "./file/clazz/PandaClass";
 export { PandaMethod } from "./file/method/PandaMethod";
 export { PandaString } from "./file/desc/PandaString";
@@ -32,4 +33,4 @@ export {
     ResourceKeyType,
     ResourceResType,
 } from "./res/ResourceEnums";
-export { PandaParseException, PandaDecompileException } from "./PandaParseException";
+export { PandaParseException, PandaDecompileException, PandaChecksumException } from "./PandaParseException";

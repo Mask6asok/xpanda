@@ -9,16 +9,19 @@
     ".": "./src/code-index-db.mjs",
     "./build": "./src/code-index-build.mjs",
     "./cli": "./src/code-index.mjs",
-    "./mcp": "./src/code-index-mcp.mjs"
+    "./mcp": "./src/code-index-mcp.mjs",
+    "./unified-mcp": "./src/unified-mcp.mjs"
   },
   "scripts": {
     "index": "node src/code-index.mjs",
     "mcp": "node src/code-index-mcp.mjs",
+    "unified-mcp": "node src/unified-mcp.mjs",
     "test": "node --import tsx --test test/*.test.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.1",
     "xpanda-core": "*",
+    "xpanda-mcp": "*",
     "zod": "^4.6.7",
     "tsx": "^4.7.0"
   }

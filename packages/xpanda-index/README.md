@@ -6,6 +6,18 @@ SQLite and filesystem operations stay outside the browser-safe core.
 
 The original `xpanda-mcp` server remains available for live decompilation. This server queries
 persisted indexes and keeps its ten `code_index_*` tool names stable for existing clients.
+For one connection containing both original live tools and index tools, use:
+
+```sh
+node packages/xpanda-index/src/unified-mcp.mjs --root /path/analysis-sessions
+```
+
+This exposes all twenty existing tools without renaming them. Pass `--read-only` to
+expose only the ten index tools; no live loading, decompilation or export is registered.
+`--database` and response budgets work as on the index-only server. Live `fileId`
+sessions and persisted `index_id` values have separate identities. Exporting JS does
+not automatically rebuild a database. The Harmony HAP Analyzer wrapper additionally
+registers its existing preparation/indexing workflow when a writable root is configured.
 
 ## Runtime and installation
 

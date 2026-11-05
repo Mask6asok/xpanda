@@ -1,4 +1,5 @@
-import { Adler32, HapFile, PandaDecompiler, PandaFile, ResourceIndexFile } from "xpanda-core";
+import { Adler32, HapFile, PandaDecompiler, ResourceIndexFile, parsePandaFileForAnalysis } from "xpanda-core";
+import type { PandaFile } from "xpanda-core";
 import { loadPandaFile } from "./io";
 
 /**
@@ -85,10 +86,10 @@ export class Registry {
         }
         const data = hapSession.hap.readEntry(entryName);
         if (!data) throw new Error("hap 条目读取失败: " + entryName);
-        const pandaFile = new PandaFile(data);
+        const pandaFile = parsePandaFileForAnalysis(data);
         const hapBase = require("path").basename(hapSession.path).replace(/\.hap$/i, "");
         const entryBase = entryName.replace(/\.abc$/i, "").replace(/\//g, "_");
-        const fileId = "hap_" + Registry.makeFileId(hapBase + "_" + entryBase, pandaFile.header.checksum);
+        const fileId = "hap_" + Registry.makeFileId(hapBase + "_" + entryBase, pandaFile.checksumMismatch?.calculated ?? pandaFile.header.checksum);
         const session: AbcSession = {
             kind: "abc",
             fileId,
@@ -103,7 +104,7 @@ export class Registry {
 
     private loadAbcPath(absPath: string): { session: AbcSession; cached: boolean } {
         const pandaFile = loadPandaFile(absPath);
-        const fileId = Registry.makeFileId(absPath, pandaFile.header.checksum);
+        const fileId = Registry.makeFileId(absPath, pandaFile.checksumMismatch?.calculated ?? pandaFile.header.checksum);
         const session: AbcSession = {
             kind: "abc",
             fileId,

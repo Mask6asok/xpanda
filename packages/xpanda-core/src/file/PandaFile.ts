@@ -1,6 +1,6 @@
 import { Adler32 } from "../codec/Adler32";
 import { Leb128 } from "../codec/Leb128";
-import { PandaParseException } from "../PandaParseException";
+import { PandaChecksumException, PandaParseException } from "../PandaParseException";
 import { Header } from "./desc/Header";
 import { IndexHeader } from "./desc/IndexHeader";
 import { Offset } from "./desc/Offset";
@@ -9,6 +9,15 @@ import { PandaString } from "./desc/PandaString";
 import type { IPandaFile } from "./IPandaFile";
 
 export const ENTRY_FUNCTION_MAIN = "func_main_0";
+
+export interface PandaFileOptions {
+    readonly lenientChecksum?: boolean;
+}
+
+export interface ChecksumMismatch {
+    readonly expected: number;
+    readonly calculated: number;
+}
 
 /**
  * Panda (.abc) 文件(移植自 Java jmp0.abc.file.PandaFile)
@@ -22,8 +31,9 @@ export class PandaFile implements IPandaFile {
     private readonly offsets = new Map<number, unknown>();
     readonly lnpOffsets: Offset[];
     readonly foreignPandaClasses: PandaClass[];
+    readonly checksumMismatch?: ChecksumMismatch;
 
-    constructor(data: Uint8Array) {
+    constructor(data: Uint8Array, options: PandaFileOptions = {}) {
         this.data = data;
         this.leb128 = new Leb128(data);
         this.header = new Header(data, 0);
@@ -34,8 +44,12 @@ export class PandaFile implements IPandaFile {
         adler32.update(data, checksumOffset, data.length - checksumOffset);
         const calcCheckSum = adler32.getValue() & 0x0fffffff;
         if (this.header.checksum !== calcCheckSum) {
-            throw new PandaParseException(
-                `Checksum check failed,the file may be encrypted. calcChecksum=${calcCheckSum} fileChecksum=${this.header.checksum}`);
+            if (!options.lenientChecksum) {
+                throw new PandaChecksumException(this.header.checksum, calcCheckSum);
+            }
+            // Reject impossible top-level ranges before trusting unchecked counts.
+            this.checkAnalysisBounds();
+            this.checksumMismatch = { expected: this.header.checksum, calculated: calcCheckSum };
         }
 
         // 解析 lnp 偏移表
@@ -65,6 +79,21 @@ export class PandaFile implements IPandaFile {
             foreignPandaClasses.push(pandaClass);
         }
         this.foreignPandaClasses = foreignPandaClasses;
+    }
+
+    private checkAnalysisBounds(): void {
+        const h = this.header;
+        const ranges = [
+            [h.foreignOff, h.foreignSize],
+            [h.classIdxOff, h.numClasses * 4],
+            [h.lnpIdxOff, h.numLnps * 4],
+            [h.literalArrayIdxOff, h.numLiteralArrays * 4],
+            [h.indexSectionOff, h.numIndexes * INDEX_HEADER_SIZE_FOR_FILE],
+        ];
+        if (h.fileSize !== this.data.length || ranges.some(([offset, size]) =>
+            size > 0 && (offset > this.data.length || size > this.data.length - offset))) {
+            throw new PandaParseException("ABC header size or index range is out of bounds");
+        }
     }
 
     resolveIndexHeaderByOffset(offset: Offset): IndexHeader | null {
@@ -118,6 +147,16 @@ export class PandaFile implements IPandaFile {
         return this.getAllStrings()
             .map((s) => s.getOffset() + "->" + s.content + "\n")
             .join("");
+    }
+}
+
+/** Explicit analysis policy; strict library construction remains the default. */
+export function parsePandaFileForAnalysis(data: Uint8Array): PandaFile {
+    try {
+        return new PandaFile(data);
+    } catch (error) {
+        if (!(error instanceof PandaChecksumException)) throw error;
+        return new PandaFile(data, { lenientChecksum: true });
     }
 }
 

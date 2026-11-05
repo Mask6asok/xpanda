@@ -10,7 +10,7 @@
   "scripts": {
     "gen:opcodes": "tsx scripts/gen-opcodes.ts",
     "typecheck": "tsc --noEmit",
-    "test": "tsx test/decompile.test.ts && tsx test/assembler.test.ts"
+    "test": "tsx test/decompile.test.ts && tsx test/assembler.test.ts && node --import tsx --test test/checksum.test.mjs"
   },
   "dependencies": {
     "@babel/generator": "^7.23.9",
