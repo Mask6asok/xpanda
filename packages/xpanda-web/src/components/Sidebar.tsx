@@ -1,6 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type KeyboardEvent } from "react";
 import type { ClassRef, LoadedImage } from "../decompiler";
 import { formatBytes } from "../format";
+import { buildClassTree, type ClassDirectory } from "../class-tree";
 
 /**
  * 左侧栏:文件(来源)列表 + 可搜索、按包分组的类列表。
@@ -24,7 +25,7 @@ interface SidebarProps {
 
 export function Sidebar({ images, refs, selectedKey, cachedKeys, onSelect, onCloseImage, onCloseAll, closeDisabled }: SidebarProps) {
     const [query, setQuery] = useState("");
-    const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+    const [expanded, setExpanded] = useState<Map<string, boolean>>(new Map());
     /** 按 image.id 折叠整个文件(不影响包分组各自的折叠状态) */
     const [collapsedFiles, setCollapsedFiles] = useState<Set<string>>(new Set());
 
@@ -34,13 +35,81 @@ export function Sidebar({ images, refs, selectedKey, cachedKeys, onSelect, onClo
         return refs.filter((r) => r.displayPath.toLowerCase().includes(q));
     }, [refs, query]);
 
-    const toggleGroup = (key: string): void => {
-        setCollapsed((prev) => {
-            const next = new Set(prev);
-            if (next.has(key)) next.delete(key);
-            else next.add(key);
+    const selected = refs.find((ref) => ref.key === selectedKey);
+    useEffect(() => {
+        if (!selected) return;
+        const paths = selected.displayPath.split("/");
+        paths.pop();
+        setExpanded((previous) => {
+            const next = new Map(previous);
+            for (let i = 1; i <= paths.length; i++) next.set(selected.source.id + "|" + paths.slice(0, i).join("/"), true);
             return next;
         });
+        setCollapsedFiles((previous) => {
+            const next = new Set(previous);
+            next.delete(selected.source.image.id);
+            return next;
+        });
+    }, [selected]);
+
+    const bySource = useMemo(() => {
+        const groups = new Map<string, ClassRef[]>();
+        for (const ref of filtered) {
+            const group = groups.get(ref.source.id);
+            if (group) group.push(ref);
+            else groups.set(ref.source.id, [ref]);
+        }
+        return new Map([...groups].map(([id, group]) => [id, buildClassTree(group)]));
+    }, [filtered]);
+
+    const renderDirectory = (directory: ClassDirectory, sourceId: string, depth: number): React.ReactNode => (
+        <ul className="tree-children">
+            {[...directory.directories.values()].sort((a, b) => a.name.localeCompare(b.name)).map((child) => {
+                const key = sourceId + "|" + child.path;
+                const open = query.trim().length > 0 || (expanded.get(key) ?? depth < 1);
+                return (
+                    <li key={key}>
+                        <button className="tree-group-head" style={{ paddingLeft: 10 + depth * 16 }}
+                            title={child.path} aria-expanded={open}
+                            aria-label={`${open ? "Collapse" : "Expand"} folder ${child.path}`}
+                            onClick={() => setExpanded((previous) => new Map(previous).set(key, !open))}
+                            onKeyDown={(event) => {
+                                if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
+                                    event.preventDefault();
+                                    setExpanded((previous) => new Map(previous).set(key, event.key === "ArrowRight"));
+                                }
+                            }}>
+                            <span className="tw" aria-hidden="true">{open ? "▾" : "▸"}</span>
+                            <span className="tree-group-name">{child.name}</span>
+                            <span className="count">{child.count}</span>
+                        </button>
+                        {open && renderDirectory(child, sourceId, depth + 1)}
+                    </li>
+                );
+            })}
+            {[...directory.files].sort((a, b) => a.simpleName.localeCompare(b.simpleName)).map((ref) => (
+                <li key={ref.key}>
+                    <button className={"tree-class" + (ref.key === selectedKey ? " active" : "") + (cachedKeys.has(ref.key) ? " cached" : "")}
+                        style={{ paddingLeft: 12 + depth * 16 }} title={ref.displayPath}
+                        aria-current={ref.key === selectedKey ? "page" : undefined} onClick={() => onSelect(ref)}>
+                        <span className="dot" aria-hidden="true" />
+                        <span className="tree-file-name">{ref.simpleName}.js</span>
+                    </button>
+                </li>
+            ))}
+        </ul>
+    );
+
+    const moveFocus = (event: KeyboardEvent<HTMLDivElement>): void => {
+        if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
+        const rows = [...event.currentTarget.querySelectorAll<HTMLButtonElement>(".tree button:not(:disabled)")];
+        if (!(event.target instanceof HTMLButtonElement)) return;
+        const current = rows.indexOf(event.target);
+        if (current < 0) return;
+        event.preventDefault();
+        const next = event.key === "Home" ? 0 : event.key === "End" ? rows.length - 1
+            : Math.max(0, Math.min(rows.length - 1, current + (event.key === "ArrowDown" ? 1 : -1)));
+        rows[next]?.focus();
     };
 
     const toggleFile = (key: string): void => {
@@ -53,7 +122,7 @@ export function Sidebar({ images, refs, selectedKey, cachedKeys, onSelect, onClo
     };
 
     return (
-        <div className="sidebar">
+        <div className="sidebar" onKeyDown={moveFocus}>
             <div className="sidebar-search">
                 <input
                     type="text"
@@ -75,23 +144,8 @@ export function Sidebar({ images, refs, selectedKey, cachedKeys, onSelect, onClo
             </div>
             <div className="tree">
                 {images.map((img) => {
-                    const imgRefs = filtered.filter((r) => r.source.image === img);
-                    if (imgRefs.length === 0) return null;
-                    // source → pkg → refs,组按文件内出现序排列
-                    const bySource = new Map<string, { name: string | null; pkgs: Map<string, ClassRef[]> }>();
-                    for (const ref of imgRefs) {
-                        let s = bySource.get(ref.source.id);
-                        if (s === undefined) {
-                            s = { name: img.kind === "hap" ? ref.source.name : null, pkgs: new Map() };
-                            bySource.set(ref.source.id, s);
-                        }
-                        let arr = s.pkgs.get(ref.pkg);
-                        if (arr === undefined) {
-                            arr = [];
-                            s.pkgs.set(ref.pkg, arr);
-                        }
-                        arr.push(ref);
-                    }
+                    const sources = img.sources.filter((source) => bySource.has(source.id));
+                    if (sources.length === 0) return null;
                     // 搜索时临时展开文件,保证匹配的类立即可见;清空搜索后恢复用户手动折叠状态
                     const fileCollapsed = collapsedFiles.has(img.id) && query.trim().length === 0;
                     return (
@@ -125,39 +179,15 @@ export function Sidebar({ images, refs, selectedKey, cachedKeys, onSelect, onClo
                                             {img.moduleInfo.bundle} · v{img.moduleInfo.version} · {img.moduleInfo.vm}
                                         </div>
                                     )}
-                                    {[...bySource.entries()].map(([sourceId, s]) => (
-                                        <div key={sourceId}>
-                                            {s.name !== null && <div className="tree-source" title={s.name}>{s.name}</div>}
-                                            {[...s.pkgs.entries()].map(([pkg, list]) => {
-                                                const gkey = sourceId + "|" + pkg;
-                                                const isCollapsed = collapsed.has(gkey);
-                                                return (
-                                                    <div key={gkey}>
-                                                        <button className="tree-group-head" onClick={() => toggleGroup(gkey)}>
-                                                            <span className="tw">{isCollapsed ? "▸" : "▾"}</span>
-                                                            <span className="tree-group-name" title={pkg}>{pkg}</span>
-                                                            <span className="count">{list.length}</span>
-                                                        </button>
-                                                        {!isCollapsed && list.map((ref) => (
-                                                            <button
-                                                                key={ref.key}
-                                                                className={
-                                                                    "tree-class" +
-                                                                    (ref.key === selectedKey ? " active" : "") +
-                                                                    (cachedKeys.has(ref.key) ? " cached" : "")
-                                                                }
-                                                                title={ref.displayPath}
-                                                                onClick={() => onSelect(ref)}
-                                                            >
-                                                                <span className="dot" />
-                                                                {ref.simpleName}
-                                                            </button>
-                                                        ))}
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    ))}
+                                    {sources.map((source) => {
+                                        const root = bySource.get(source.id);
+                                        return root && (
+                                            <div key={source.id}>
+                                                {img.kind === "hap" && <div className="tree-source" title={source.name}>{source.name}</div>}
+                                                {renderDirectory(root, source.id, 0)}
+                                            </div>
+                                        );
+                                    })}
                                 </>
                             )}
                         </div>

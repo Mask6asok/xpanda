@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { strToU8, zipSync, type Zippable } from "fflate";
 import {
     DEFAULT_DECOMPILE_JOBS,
@@ -11,6 +11,7 @@ import {
     type BulkState,
     type ClassRef,
     type DecompileMode,
+    type AbcSource,
     type LoadedImage,
 } from "./decompiler";
 import { hashBytes } from "./cache";
@@ -20,6 +21,9 @@ import { NoticeBar } from "./components/NoticeBar";
 import { BulkBar } from "./components/BulkBar";
 import { Sidebar } from "./components/Sidebar";
 import { CodePane } from "./components/CodePane";
+import { ReferencePane } from "./components/ReferencePane";
+import { buildXrefsInWorker, type XrefWorkerClient } from "./parallel/XrefWorker";
+import type { CodeJump, CodeNavigate } from "./code-navigation";
 
 type Phase = "idle" | "parsing" | "decompiling";
 
@@ -84,7 +88,20 @@ export function App() {
     const [workerJobs, setWorkerJobs] = useState<number>(loadWorkerJobs);
     /** 窄屏下主区显示哪个视图:类列表 / 代码(宽屏下两者并排,该状态不生效) */
     const [mobileView, setMobileView] = useState<"list" | "code">("list");
+    const [referencesOpen, setReferencesOpen] = useState(false);
+    const [referenceSourceId, setReferenceSourceId] = useState<string | null>(null);
+    const [referenceIndexes, setReferenceIndexes] = useState<Map<string, XrefWorkerClient>>(new Map());
+    const referenceWorkers = useRef(new Map<string, XrefWorkerClient>());
+    const [referenceBuild, setReferenceBuild] = useState<{ sourceId: string; done: number; total: number } | null>(null);
+    const [referenceError, setReferenceError] = useState<{ sourceId: string; message: string } | null>(null);
+    const referenceTask = useRef<{ sourceId: string; promise: Promise<XrefWorkerClient> } | null>(null);
+    const [codeJump, setCodeJump] = useState<CodeJump | null>(null);
     const isNarrow = useIsNarrow();
+
+    useEffect(() => () => {
+        for (const worker of referenceWorkers.current.values()) worker.dispose();
+        referenceWorkers.current.clear();
+    }, []);
 
     const bulkCancel = useRef(false);
     const dragDepth = useRef(0);
@@ -96,6 +113,11 @@ export function App() {
         () => images.flatMap((img) => img.sources.flatMap((s) => buildClassRefs(s))),
         [images],
     );
+    const sources = useMemo(() => images.flatMap((img) => img.sources), [images]);
+    const referenceSource = sources.find((source) => source.id === referenceSourceId)
+        ?? selected?.source
+        ?? sources[0]
+        ?? null;
 
     const cachedKeys = useMemo(() => {
         const set = new Set<string>();
@@ -286,6 +308,15 @@ export function App() {
         const img = images.find((i) => i.id === imageId);
         if (img === undefined) return;
         service.clearSources(img.sources.map((s) => s.cacheKey));
+        for (const source of img.sources) {
+            referenceWorkers.current.get(source.id)?.dispose();
+            referenceWorkers.current.delete(source.id);
+        }
+        setReferenceIndexes((current) => {
+            const next = new Map(current);
+            for (const source of img.sources) next.delete(source.id);
+            return next;
+        });
         setImages((prev) => prev.filter((i) => i.id !== imageId));
         // 选中的类属于被关闭文件时清空选中;窄屏下回到类列表视图
         if (selected !== null && selected.source.image.id === imageId) {
@@ -299,8 +330,13 @@ export function App() {
     /** 关闭全部文件:清空整个内存缓存,回到欢迎页(浏览器里保存的结果保留) */
     const closeAll = (): void => {
         service.clear();
+        for (const worker of referenceWorkers.current.values()) worker.dispose();
+        referenceWorkers.current.clear();
         setImages([]);
         setSelected(null);
+        setReferenceIndexes(new Map());
+        setReferenceSourceId(null);
+        setReferencesOpen(false);
         setBulk(null);
         setMobileView("list");
         setCacheVersion((v) => v + 1);
@@ -315,6 +351,62 @@ export function App() {
         void service.clearPersistent();
     };
 
+    const toggleReferences = (): void => {
+        if (referencesOpen) {
+            setReferencesOpen(false);
+            return;
+        }
+        setReferenceSourceId(selected?.source.id ?? sources[0]?.id ?? null);
+        setReferencesOpen(true);
+        setMobileView("code");
+    };
+
+    const getReferenceIndex = useCallback((source: AbcSource, rebuild = false): Promise<XrefWorkerClient> => {
+        const task = referenceTask.current;
+        if (task) return task.sourceId === source.id ? task.promise : Promise.reject(new Error("Another ABC is being indexed. Try again when it finishes."));
+        const existing = referenceWorkers.current.get(source.id);
+        if (existing && !rebuild) return Promise.resolve(existing);
+        setReferenceError(null);
+        setReferenceBuild({ sourceId: source.id, done: 0, total: 0 });
+        existing?.dispose();
+        referenceWorkers.current.delete(source.id);
+        setReferenceIndexes((current) => {
+            const next = new Map(current);
+            next.delete(source.id);
+            return next;
+        });
+        const promise = buildXrefsInWorker(source.pandaFile.data, (done, total) => {
+            setReferenceBuild((current) => current?.sourceId === source.id ? { sourceId: source.id, done, total } : current);
+        }).then((index) => {
+            referenceWorkers.current.set(source.id, index);
+            setReferenceIndexes((current) => new Map(current).set(source.id, index));
+            return index;
+        }).catch((e: unknown) => {
+            setReferenceError({ sourceId: source.id, message: readError(e) });
+            throw e;
+        }).finally(() => {
+            referenceTask.current = null;
+            setReferenceBuild((current) => current?.sourceId === source.id ? null : current);
+        });
+        referenceTask.current = { sourceId: source.id, promise };
+        return promise;
+    }, []);
+
+    const buildReferences = (source: AbcSource): void => {
+        void getReferenceIndex(source, true).catch((e: unknown) => {
+            setReferenceError({ sourceId: source.id, message: readError(e) });
+        });
+    };
+
+    const openReferencedClass: CodeNavigate = (sourceId, classOffset, symbol = "", line, reference): void => {
+        const ref = refs.find((candidate) => candidate.source.id === sourceId && candidate.clazz.getOffset() === classOffset);
+        if (!ref) { setError("The referenced record has no displayable module in this ABC."); return; }
+        setCodeJump((previous) => ({ sourceId, classOffset, symbol, line, reference, sequence: (previous?.sequence ?? 0) + 1 }));
+        setSelected(ref);
+        setReferencesOpen(false);
+        setMobileView("code");
+    };
+
     return (
         <div className="app">
             <Topbar
@@ -322,6 +414,9 @@ export function App() {
                 mode={mode}
                 onModeChange={setMode}
                 disabled={phase === "parsing"}
+                referencesActive={referencesOpen}
+                referencesDisabled={sources.length === 0}
+                onToggleReferences={toggleReferences}
             />
             <NoticeBar />
             {error !== null && (
@@ -376,21 +471,43 @@ export function App() {
                             cachedKeys={cachedKeys}
                             onSelect={(ref) => {
                                 setSelected(ref);
+                                setReferencesOpen(false);
                                 setMobileView("code");
                             }}
                             onCloseImage={closeImage}
                             onCloseAll={images.length > 1 ? closeAll : undefined}
-                            closeDisabled={bulk !== null && bulk.running}
+                            closeDisabled={(bulk !== null && bulk.running) || referenceBuild !== null}
                         />
-                        <CodePane
-                            selected={selected}
-                            code={currentCode}
-                            elapsedMs={currentElapsed}
-                            decompiling={phase === "decompiling"}
-                            mode={mode}
-                            onRedecompile={redecompileSelected}
-                            onBack={isNarrow ? () => setMobileView("list") : undefined}
-                        />
+                        {referencesOpen ? (
+                            <ReferencePane
+                                sources={sources}
+                                sourceId={referenceSource?.id ?? null}
+                                onSourceChange={setReferenceSourceId}
+                                index={referenceSource ? referenceIndexes.get(referenceSource.id) : undefined}
+                                building={referenceBuild?.sourceId === referenceSource?.id}
+                                progress={referenceBuild?.sourceId === referenceSource?.id
+                                    ? { done: referenceBuild.done, total: referenceBuild.total }
+                                    : { done: 0, total: 0 }}
+                                error={referenceError?.sourceId === referenceSource?.id ? referenceError.message : null}
+                                onBuild={buildReferences}
+                                onOpenClass={openReferencedClass}
+                                onBack={isNarrow ? () => setMobileView("list") : undefined}
+                            />
+                        ) : (
+                            <CodePane
+                                selected={selected}
+                                code={currentCode}
+                                elapsedMs={currentElapsed}
+                                decompiling={phase === "decompiling"}
+                                mode={mode}
+                                onRedecompile={redecompileSelected}
+                                jump={codeJump}
+                                onNavigate={openReferencedClass}
+                                getReferenceIndex={getReferenceIndex}
+                                referenceProgress={referenceBuild?.sourceId === selected?.source.id ? referenceBuild : null}
+                                onBack={isNarrow ? () => setMobileView("list") : undefined}
+                            />
+                        )}
                     </>
                 )}
             </div>

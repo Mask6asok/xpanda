@@ -14,3 +14,21 @@ export interface SimplifyResultMessage {
     text?: string;
     error?: string;
 }
+
+export interface XrefBuildRequestMessage {
+    readonly type: "build";
+    bytes: Uint8Array;
+}
+
+export type XrefRequestMessage = XrefBuildRequestMessage
+    | { readonly type: "query"; readonly id: number; readonly query: import("../xrefs").XrefQuery }
+    | { readonly type: "lookup"; readonly id: number; readonly symbol: string; readonly classOffset: number }
+    | { readonly type: "references"; readonly id: number; readonly symbol: string; readonly classOffset: number };
+
+export type XrefWorkerMessage =
+    | { type: "progress"; done: number; total: number }
+    | { type: "result"; summary: import("../xrefs").XrefSummary }
+    | { type: "query-result"; id: number; page: import("../xrefs").XrefPage }
+    | { type: "lookup-result"; id: number; matches: import("../xrefs").XrefSymbolMatches }
+    | { type: "references-result"; id: number; references: import("../xrefs").XrefSymbolReferences }
+    | { type: "error"; error: string };

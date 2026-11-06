@@ -20,9 +20,12 @@ interface TopbarProps {
     mode: DecompileMode;
     onModeChange: (mode: DecompileMode) => void;
     disabled: boolean;
+    referencesActive: boolean;
+    referencesDisabled: boolean;
+    onToggleReferences: () => void;
 }
 
-export function Topbar({ onOpen, mode, onModeChange, disabled }: TopbarProps) {
+export function Topbar({ onOpen, mode, onModeChange, disabled, referencesActive, referencesDisabled, onToggleReferences }: TopbarProps) {
     return (
         <div className="topbar">
             <span className="logo">
@@ -57,6 +60,14 @@ export function Topbar({ onOpen, mode, onModeChange, disabled }: TopbarProps) {
                     Raw AST
                 </button>
             </div>
+            <button
+                className={"btn-references" + (referencesActive ? " active" : "")}
+                onClick={onToggleReferences}
+                disabled={referencesDisabled}
+                aria-pressed={referencesActive}
+            >
+                References
+            </button>
             <button className="btn-accent" onClick={onOpen} disabled={disabled}>
                 Open file…
             </button>

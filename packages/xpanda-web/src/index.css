@@ -234,6 +234,12 @@ button:disabled {
     font-weight: 600;
 }
 
+.btn-references.active {
+    border-color: var(--accent);
+    color: #cfe4ff;
+    background: #2c3b52;
+}
+
 /* ---------- 错误条 ---------- */
 
 .errorbar {
@@ -649,6 +655,219 @@ button:disabled {
     min-height: 0;
 }
 
+/* ---------- 交叉引用视图 ---------- */
+
+.referencepane {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    background: var(--bg);
+}
+
+.reference-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 12px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    flex: 0 0 auto;
+}
+
+.reference-toolbar strong {
+    flex: 0 0 auto;
+}
+
+.reference-source {
+    flex: 1 1 auto;
+    min-width: 100px;
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 5px 8px;
+    font: inherit;
+}
+
+.reference-status,
+.reference-error {
+    padding: 5px 12px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-dim);
+    font-size: 11px;
+}
+
+.reference-error {
+    color: var(--red);
+    white-space: pre-wrap;
+}
+
+.reference-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    flex: 0 0 auto;
+}
+
+.reference-controls select,
+.reference-controls input {
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 5px 8px;
+    font: inherit;
+}
+
+.reference-controls input {
+    flex: 1 1 auto;
+    min-width: 100px;
+}
+
+.reference-content {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(220px, 36%) minmax(0, 1fr);
+}
+
+.reference-list,
+.reference-sites {
+    overflow: auto;
+    min-height: 0;
+}
+
+.reference-list {
+    border-right: 1px solid var(--border);
+    background: var(--panel);
+}
+
+.reference-list-count {
+    padding: 7px 10px;
+    color: var(--text-dim);
+    font-size: 11px;
+    border-bottom: 1px solid var(--border);
+}
+
+.reference-item {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    padding: 7px 10px;
+    text-align: left;
+    border: 0;
+    border-bottom: 1px solid rgba(47, 53, 66, 0.55);
+    border-radius: 0;
+    background: transparent;
+    overflow: hidden;
+}
+
+.reference-item.active {
+    color: #cfe4ff;
+    background: #2c3b52;
+}
+
+.reference-item-title,
+.reference-item-meta,
+.reference-site-title,
+.reference-site-meta {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.reference-item-title,
+.reference-site-title {
+    font-family: var(--mono);
+}
+
+.reference-item-meta,
+.reference-site-meta {
+    color: var(--text-dim);
+    font-size: 11px;
+}
+
+.reference-detail {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+}
+
+.reference-detail-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+}
+
+.reference-detail-head strong {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: var(--mono);
+}
+
+.reference-detail-head span {
+    color: var(--text-dim);
+    font-size: 11px;
+    white-space: nowrap;
+}
+
+.reference-site {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-bottom: 1px solid rgba(47, 53, 66, 0.75);
+}
+
+.reference-site-main {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+    gap: 3px;
+}
+
+.reference-open-class {
+    flex: 0 0 auto;
+    padding: 3px 8px;
+    font-size: 11px;
+}
+
+.reference-empty {
+    padding: 24px 16px;
+    color: var(--text-dim);
+}
+
+.reference-empty.compact {
+    padding: 14px 12px;
+}
+
+.reference-back {
+    display: none;
+    background: transparent;
+    border: 0;
+    color: var(--accent);
+    font-size: 20px;
+    line-height: 1;
+    padding: 2px 8px 2px 0;
+    margin-left: -4px;
+    flex: 0 0 auto;
+}
+
 .codepane-empty {
     flex: 1;
     display: flex;
@@ -893,7 +1112,8 @@ button:disabled {
     }
 
     .sidebar,
-    .codepane {
+    .codepane,
+    .referencepane {
         position: absolute;
         inset: 0;
         flex: 1 1 auto;
@@ -902,6 +1122,7 @@ button:disabled {
     }
 
     .main.mobile-view-list .codepane,
+    .main.mobile-view-list .referencepane,
     .main.mobile-view-code .sidebar {
         display: none;
     }
@@ -915,6 +1136,37 @@ button:disabled {
 
     .codepane-back {
         display: inline-block;
+    }
+
+    .reference-back {
+        display: inline-block;
+    }
+
+    .reference-toolbar,
+    .reference-controls {
+        flex-wrap: wrap;
+        gap: 7px;
+        padding: 7px 10px;
+    }
+
+    .reference-source {
+        flex-basis: 100%;
+        order: 3;
+    }
+
+    .reference-content {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: minmax(120px, 35%) minmax(0, 1fr);
+    }
+
+    .reference-list {
+        border-right: 0;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .reference-controls input {
+        font-size: 16px;
+        padding: 8px 10px;
     }
 
     .code-body {
@@ -978,5 +1230,229 @@ button:disabled {
 
     .errorbar-close {
         padding: 4px 10px;
+    }
+}
+
+/* Layout: nested file list; .tree owns scrolling, folder rows stay in document flow. */
+.tree-children {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.tree-file-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tree-group-head,
+.tree-class {
+    min-height: 30px;
+}
+
+.tree button:focus-visible,
+.codepane button:focus-visible,
+.codepane select:focus-visible,
+.codepane-scroll:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+}
+
+/* Layout: fixed code toolbars + .codepane-scroll; modal results scroll in .code-navigation-body. */
+.codepane-navigation {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    border-bottom: 1px solid var(--border);
+    background: var(--panel);
+    flex: 0 0 auto;
+}
+
+.codepane-navigation label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    color: var(--text-dim);
+}
+
+.codepane-navigation select {
+    min-width: 0;
+    max-width: 240px;
+    padding: 5px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--bg);
+    color: var(--text);
+    font: inherit;
+}
+
+.code-symbol {
+    color: var(--text-dim);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+}
+
+kbd {
+    font-family: var(--mono);
+    color: var(--text-dim);
+    font-size: 0.85em;
+    margin-left: 4px;
+}
+
+.code-line-selected {
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.code-navigation-dialog {
+    width: min(900px, calc(100vw - 32px));
+    max-height: min(80dvh, 760px);
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--panel);
+    color: var(--text);
+    overflow: hidden;
+}
+
+.code-navigation-dialog[open] {
+    display: flex;
+    flex-direction: column;
+}
+
+.code-navigation-dialog::backdrop {
+    background: rgb(0 0 0 / 60%);
+}
+
+.code-navigation-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    justify-content: space-between;
+    padding: 12px;
+    border-bottom: 1px solid var(--border);
+    flex: 0 0 auto;
+}
+
+.code-navigation-header h2 {
+    margin: 0;
+    min-width: 0;
+    font-size: 16px;
+    overflow-wrap: anywhere;
+}
+
+.code-navigation-header button {
+    flex: 0 0 auto;
+}
+
+.code-navigation-note,
+.code-navigation-count {
+    margin: 0;
+    padding: 8px 12px;
+    color: var(--text-dim);
+    font-size: 12px;
+    overflow-wrap: anywhere;
+}
+
+.code-navigation-body {
+    min-height: 0;
+    overflow: auto;
+    padding: 8px;
+}
+
+.code-navigation-body > p {
+    padding: 8px;
+    margin: 0;
+}
+
+.code-navigation-row {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    width: 100%;
+    min-height: 44px;
+    padding: 10px;
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid var(--border);
+    border-radius: 0;
+    text-align: left;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.code-navigation-row > strong,
+.code-navigation-row > span {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.code-navigation-row span {
+    color: var(--text-dim);
+    font-family: var(--mono);
+    font-size: 12px;
+}
+
+@media (max-width: 760px) {
+    .tree-group-head,
+    .tree-class {
+        min-height: 44px;
+    }
+    .codepane-navigation button {
+        min-height: 44px;
+    }
+    .codepane-navigation label {
+        width: 100%;
+    }
+    .codepane-navigation select {
+        flex: 1;
+        max-width: 100%;
+        min-height: 44px;
+    }
+    .code-navigation-dialog {
+        max-height: 85dvh;
+    }
+}
+
+/* The modal keeps one scroller; registration and bytecode groups start collapsed. */
+.code-reference-group + .code-reference-group {
+    border-top: 1px solid var(--border);
+    margin-top: 8px;
+}
+
+.code-reference-group-title,
+.code-reference-group > summary {
+    display: block;
+    padding: 10px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.code-reference-group > summary {
+    display: list-item;
+    margin-left: 10px;
+    cursor: pointer;
+    overflow-wrap: anywhere;
+}
+
+.code-reference-group > summary:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+}
+
+.code-reference-technical {
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 760px) {
+    .code-reference-group > summary {
+        min-height: 44px;
     }
 }

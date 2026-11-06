@@ -146,7 +146,10 @@ export function loadImage(data: Uint8Array, fileName: string, fileHash: string):
 /** 展开一个 abc 来源的全部类为可反编译引用(保持文件内类序) */
 export function buildClassRefs(source: AbcSource): ClassRef[] {
     const refs: ClassRef[] = [];
+    const seen = new Set<number>();
     for (const clazz of source.pandaFile.getAllClasses()) {
+        if (seen.has(clazz.getOffset())) continue;
+        seen.add(clazz.getOffset());
         // Skip classes that can never produce output, mirroring the CLI:
         // no func_main_0 entry means compiler metadata (L_ES*Annotation;) or
         // @ohos/@system stubs; empty names are malformed records. Decompiling

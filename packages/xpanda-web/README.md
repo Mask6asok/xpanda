@@ -19,6 +19,12 @@ app package and decompile it **entirely in the browser** (pure frontend, nothing
   Classes without a `func_main_0` entry (compiler metadata such as `L_ES*Annotation;`
   and `@ohos.*` / `@system.*` stubs) are hidden — they have no decompilable code,
   matching the CLI which never writes them.
+- **References** builds an on-demand, in-memory index for one loaded `.abc` entry in a Web Worker.
+  The complete index stays in the worker; searches return at most 300 entries and 1,000 reference
+  sites to avoid cloning the full index into the UI. Closing the file releases its worker and index.
+  Search incoming references to methods, strings, fields and literal arrays, or inspect a method's
+  outgoing operands. Dynamic call targets remain unresolved; indexes are per ABC entry and last only
+  for the current page session.
 - "Decompile all" runs every class with a live progress bar (cancellable). In optimized mode the
   expensive `simplify` pass runs in a pool of Web Workers (1–8 threads, default 4, same split as
   the CLI `-j`: main thread builds the AST, workers optimize); the thread count is selectable in
@@ -62,6 +68,7 @@ yarn workspace xpanda-web preview
 | Path | Responsibility |
 |---|---|
 | `src/decompiler.ts` | file loading (`.abc` / `.hap`), class indexing, `DecompileService` (cache + single/bulk decompile) |
+| `src/xrefs.ts` / `src/parallel/xref-worker.ts` | browser-safe exact-operand reference scan, run off the UI thread |
 | `src/cache.ts` | IndexedDB persistence of decompile results (file content hashing, batched writes, silent fallback) |
 | `src/highlight.ts` | Shiki-based line-oriented JavaScript highlighter (lazy singleton, pure-JS regex engine — no WASM) |
 | `src/format.ts` | class demangle (shared rules with cli `io.ts`), clipboard, download helpers |
@@ -75,3 +82,37 @@ browser-safe by design (no Node built-ins, no disk IO), so the same code powers 
 > pre-bundled dependencies (`@babel/types`, `@babel/code-frame`) read Node's `process`
 > global at module init; the classic (non-module) inline script guarantees it exists
 > before any bundled code evaluates. Don't remove it.
+
+## Code navigation
+
+The sidebar splits each class path into real, independently collapsible directories, with folders
+before files. Filtering temporarily expands matching paths; clearing the filter restores folder
+state. Opening a class reveals its ancestors. Arrow Up/Down and Home/End move between visible rows;
+Arrow Left/Right collapse or expand a focused folder.
+
+In the code viewer, click or select a method name (or use the **Method** selector):
+
+- **F12** or **Cmd/Ctrl+click** opens definition candidates; choose a declaration to jump to its JS line.
+- **Shift+F12** opens grouped reference results without leaving the code view. The first lookup automatically
+  builds the source's reference index in its worker; subsequent lookups reuse it.
+- The popup shows property call sites first, with definitions/registrations and other uses in collapsed groups.
+  Method IDs and property-name strings are merged into physical sites; duplicate operands in a registration
+  appear once. Current registrations must be anchored by a selected method offset. Other same-name
+  registrations have a separate disclosure and are never counted as references to the current method.
+  With multiple local name matches the scope is the current record; with none, definitions are name candidates. Technical entities and bytecode offsets remain available in a separate disclosure.
+  Open a reference to locate its expression in the displayed JS, and use **Back** to return.
+- Calls are recognized only when a named property load is immediately followed by a dynamic call in the
+  same basic block. These are name-based call sites, not resolved receiver types or a complete call graph.
+  Unconfirmed property reads remain in Other references. Each response returns at most 500 call sites,
+  100 current definition sites, 200 other same-name definition sites and 200 other sites, with full counts computed in the worker.
+- **Escape** closes the navigation window. Toolbar buttons provide the same actions without shortcuts.
+
+Displayed JS declaration lines come from parsing the actual output. ABC method candidates are matched
+by name, with current-record matches first; they do not prove the target of a dynamic call. Same-name
+or transformed/anonymous functions can require a choice, or fall back to opening the record. ABC PCs
+are bytecode offsets, not JS line mappings. Reference jumps carry the complete operand site, search the source method in the displayed JS, and highlight a uniquely matched expression. Repeated expressions show line-numbered candidates with code snippets. If the source method is unnamed or ambiguous, record-level matches require a choice. Expressions removed by optimization report that no JS occurrence was found; try Raw AST. This is expression matching, not a bytecode-to-JS source map. Navigation is scoped to the selected ABC entry.
+
+Layout: existing sidebar + code workspace; `.tree` owns directory scrolling, `.codepane-scroll` owns
+code scrolling, and `.code-navigation-body` owns modal results. Toolbars remain outside their scrollers.
+The primary task is to open a class and follow a symbol; path hierarchy, selected method, and matching
+reference sites take priority. Existing copy, download, cache, file close, and output-mode controls remain available.
