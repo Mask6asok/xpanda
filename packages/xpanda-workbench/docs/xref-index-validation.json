@@ -1,0 +1,245 @@
+{
+  "date": "2026-11-06",
+  "input": {
+    "name": "com.baidu.baiduapp.entry.abc",
+    "bytes": 78219428,
+    "sha256": "64e1441a221146b9d21bc282f2aed72631e22fa382b49a8aaebf24a988f968d2"
+  },
+  "environment": "Local macOS arm64, Node worker_threads; single runs, not a browser latency guarantee. Background activity varies between runs.",
+  "comparison": "All ordered method, target and site SHA-256 digests and the three reference query results match the original CFG scanner.",
+  "runs": [
+    {
+      "mode": "legacy",
+      "parseMs": 712.053791,
+      "indexMs": 7910.363917000001,
+      "queryMs": 422.455958999999,
+      "methods": 233522,
+      "targets": 496624,
+      "sites": 3567581,
+      "failed": 0,
+      "hashes": {
+        "methods": "92db89b52fdb31a8ea45d6b99c24be390f1140937196a24446cd9ee960ac59c6",
+        "targets": "01100123e34ec1489bccb39e76be7c59d8d7967e5edf7a31cc8b03acc5dfc832",
+        "sites": "273580b536e97a8bc2aa5bb9790238923ded1cee33c7366dbbdd81dc77f3767a"
+      },
+      "queries": [
+        {
+          "symbol": "setData",
+          "calls": 54,
+          "definitions": 1,
+          "sameName": 26,
+          "other": 43,
+          "hash": "22df0c7c9fdd15bdc67c7855ef0c90b2ba1971edc3911bf52344501aa6c5db77"
+        },
+        {
+          "symbol": "performWithBlock",
+          "calls": 1,
+          "definitions": 1,
+          "sameName": 0,
+          "other": 0,
+          "hash": "7ae01c5abdccc2c8122a7800f5021102528005e59f4cc2f28cea196846fab13e"
+        },
+        {
+          "symbol": "purgeVariableDependenciesOnElmtId",
+          "calls": 0,
+          "definitions": 1,
+          "sameName": 1969,
+          "other": 0,
+          "hash": "e5f976cdd9318084297c896110a8731928fde733900596959c9ec01f21961afb"
+        }
+      ],
+      "workers": {
+        "created": 0,
+        "posted": 0,
+        "received": 0,
+        "inFlight": 0,
+        "maxInFlight": 0,
+        "maxInputBytes": 0,
+        "errors": []
+      },
+      "rssMiB": 2586.0022735595703
+    },
+    {
+      "mode": "serial",
+      "parseMs": 748.586875,
+      "indexMs": 6900.238875,
+      "queryMs": 465.75354100000095,
+      "methods": 233522,
+      "targets": 496624,
+      "sites": 3567581,
+      "failed": 0,
+      "execution": {
+        "mode": "serial",
+        "workers": 0,
+        "elapsedMs": 6900.061667,
+        "fallbackMethods": 0
+      },
+      "hashes": {
+        "methods": "92db89b52fdb31a8ea45d6b99c24be390f1140937196a24446cd9ee960ac59c6",
+        "targets": "01100123e34ec1489bccb39e76be7c59d8d7967e5edf7a31cc8b03acc5dfc832",
+        "sites": "273580b536e97a8bc2aa5bb9790238923ded1cee33c7366dbbdd81dc77f3767a"
+      },
+      "queries": [
+        {
+          "symbol": "setData",
+          "calls": 54,
+          "definitions": 1,
+          "sameName": 26,
+          "other": 43,
+          "hash": "22df0c7c9fdd15bdc67c7855ef0c90b2ba1971edc3911bf52344501aa6c5db77"
+        },
+        {
+          "symbol": "performWithBlock",
+          "calls": 1,
+          "definitions": 1,
+          "sameName": 0,
+          "other": 0,
+          "hash": "7ae01c5abdccc2c8122a7800f5021102528005e59f4cc2f28cea196846fab13e"
+        },
+        {
+          "symbol": "purgeVariableDependenciesOnElmtId",
+          "calls": 0,
+          "definitions": 1,
+          "sameName": 1969,
+          "other": 0,
+          "hash": "e5f976cdd9318084297c896110a8731928fde733900596959c9ec01f21961afb"
+        }
+      ],
+      "workers": {
+        "created": 0,
+        "posted": 0,
+        "received": 0,
+        "inFlight": 0,
+        "maxInFlight": 0,
+        "maxInputBytes": 0,
+        "errors": []
+      },
+      "rssMiB": 2538.6355361938477
+    },
+    {
+      "mode": "parallel",
+      "parseMs": 735.892667,
+      "indexMs": 4451.951041,
+      "queryMs": 452.46299999999974,
+      "methods": 233522,
+      "targets": 496624,
+      "sites": 3567581,
+      "failed": 0,
+      "execution": {
+        "mode": "parallel",
+        "workers": 2,
+        "elapsedMs": 4451.77525,
+        "fallbackMethods": 0
+      },
+      "hashes": {
+        "methods": "92db89b52fdb31a8ea45d6b99c24be390f1140937196a24446cd9ee960ac59c6",
+        "targets": "01100123e34ec1489bccb39e76be7c59d8d7967e5edf7a31cc8b03acc5dfc832",
+        "sites": "273580b536e97a8bc2aa5bb9790238923ded1cee33c7366dbbdd81dc77f3767a"
+      },
+      "queries": [
+        {
+          "symbol": "setData",
+          "calls": 54,
+          "definitions": 1,
+          "sameName": 26,
+          "other": 43,
+          "hash": "22df0c7c9fdd15bdc67c7855ef0c90b2ba1971edc3911bf52344501aa6c5db77"
+        },
+        {
+          "symbol": "performWithBlock",
+          "calls": 1,
+          "definitions": 1,
+          "sameName": 0,
+          "other": 0,
+          "hash": "7ae01c5abdccc2c8122a7800f5021102528005e59f4cc2f28cea196846fab13e"
+        },
+        {
+          "symbol": "purgeVariableDependenciesOnElmtId",
+          "calls": 0,
+          "definitions": 1,
+          "sameName": 1969,
+          "other": 0,
+          "hash": "e5f976cdd9318084297c896110a8731928fde733900596959c9ec01f21961afb"
+        }
+      ],
+      "workers": {
+        "created": 2,
+        "posted": 913,
+        "received": 913,
+        "inFlight": 0,
+        "maxInFlight": 2,
+        "maxInputBytes": 128589,
+        "errors": []
+      },
+      "rssMiB": 2682.75927734375
+    },
+    {
+      "mode": "parallel",
+      "parseMs": 792.8366659999999,
+      "indexMs": 5078.262792,
+      "queryMs": 495.5677909999995,
+      "methods": 233522,
+      "targets": 496624,
+      "sites": 3567581,
+      "failed": 0,
+      "execution": {
+        "mode": "parallel",
+        "workers": 2,
+        "elapsedMs": 5078.107625000001,
+        "fallbackMethods": 0
+      },
+      "hashes": {
+        "methods": "92db89b52fdb31a8ea45d6b99c24be390f1140937196a24446cd9ee960ac59c6",
+        "targets": "01100123e34ec1489bccb39e76be7c59d8d7967e5edf7a31cc8b03acc5dfc832",
+        "sites": "273580b536e97a8bc2aa5bb9790238923ded1cee33c7366dbbdd81dc77f3767a"
+      },
+      "queries": [
+        {
+          "symbol": "setData",
+          "calls": 54,
+          "definitions": 1,
+          "sameName": 26,
+          "other": 43,
+          "hash": "22df0c7c9fdd15bdc67c7855ef0c90b2ba1971edc3911bf52344501aa6c5db77"
+        },
+        {
+          "symbol": "performWithBlock",
+          "calls": 1,
+          "definitions": 1,
+          "sameName": 0,
+          "other": 0,
+          "hash": "7ae01c5abdccc2c8122a7800f5021102528005e59f4cc2f28cea196846fab13e"
+        },
+        {
+          "symbol": "purgeVariableDependenciesOnElmtId",
+          "calls": 0,
+          "definitions": 1,
+          "sameName": 1969,
+          "other": 0,
+          "hash": "e5f976cdd9318084297c896110a8731928fde733900596959c9ec01f21961afb"
+        }
+      ],
+      "workers": {
+        "created": 2,
+        "posted": 913,
+        "received": 913,
+        "inFlight": 0,
+        "maxInFlight": 2,
+        "maxInputBytes": 128589,
+        "errors": []
+      },
+      "rssMiB": 2710.5418548583984
+    }
+  ],
+  "browser": {
+    "engine": "Real browser AnalysisClient -> analysis Worker -> 2 decoder subworkers",
+    "fixture": "zhihupp0.59.hap",
+    "methods": 12420,
+    "targets": 28896,
+    "sites": 209727,
+    "failedMethods": 0,
+    "elapsedMs": 280,
+    "workers": 2,
+    "repeatQueryReusedIndex": true
+  }
+}

@@ -24,13 +24,30 @@ Supported bytecode versions: `24.0.0.0` (backward compatible with `13.0.1.0`; Ar
 - **MCP Server**: lets AI clients such as Claude Code, OpenCode and Cursor analyze `.abc` files on demand;
 - **Web UI**: drag & drop a `.abc` / `.hap` file in the browser and decompile it entirely client-side — nothing is uploaded.
 
+## Fork analysis tools
+
+The `persistent-code-index` branch includes the fork's analysis additions:
+
+- **Independent Workbench:** `npm run workbench`, then open `http://127.0.0.1:5174/`.
+  Includes nested directories, F12 / Shift+F12 navigation, global source/path search,
+  conservative call-target analysis and two-worker reference indexing for large ABCs.
+- **Unified MCP:** `npm run mcp:unified -- --root /absolute/path/to/index-root`.
+  Exposes the ten live decompiler tools plus ten persistent SQLite index tools.
+  Requires Node 22.13+; see [MCP/index setup](packages/xpanda-index/README.md).
+- **Original Web application:** `npm run web`, on port 5173, also includes the
+  earlier reference browser and code-navigation improvements.
+
+The upstream-hosted Web URL above does not deploy these local fork additions.
+Workbench files and indexes remain in browser memory; index MCP databases are
+separate persisted artifacts. See [fork maintenance](docs/FORK-MAINTENANCE.md).
+
 ## Requirements
 
 - Node.js ≥ 18
 
 ## Monorepo layout
 
-The project is split into five yarn-workspace packages under `packages/`:
+The project is split into seven yarn-workspace packages under `packages/`:
 
 | Package | Purpose |
 |---|---|
@@ -39,6 +56,7 @@ The project is split into five yarn-workspace packages under `packages/`:
 | `xpanda-mcp` | MCP server (stdio) for AI client integration |
 | `xpanda-index` | Persistent SQLite code/xref indexes and a read-only MCP server; see [package docs](packages/xpanda-index/README.md) |
 | `xpanda-web` | browser UI (React + Vite, pure frontend) |
+| `xpanda-workbench` | Independent analysis UI: code navigation, reference dock, persistent search panel and bounded parallel indexing; see [package docs](packages/xpanda-workbench/README.md) |
 | `xpanda-asm` | load, modify (replace method code / add methods, strings), dump classes and re-emit `.abc` files |
 
 ## Install and use

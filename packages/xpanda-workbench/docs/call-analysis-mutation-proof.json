@@ -1,0 +1,27 @@
+[
+  {
+    "test": "known function merged",
+    "owner": "src/analysis/call-resolution/values.ts",
+    "mutationRejected": true
+  },
+  {
+    "test": "real SDK bytecode distinguishes",
+    "owner": "src/analysis/call-resolution/interpreter.ts",
+    "mutationRejected": true
+  },
+  {
+    "test": "accumulator-only unknown",
+    "owner": "src/analysis/call-resolution/transfer.ts",
+    "mutationRejected": true
+  },
+  {
+    "test": "merged SDK module",
+    "owner": "src/analysis/call-resolution/class-facts.ts",
+    "mutationRejected": true
+  },
+  {
+    "test": "two actual worker threads",
+    "owner": "src/analysis/call-pool.ts",
+    "mutationRejected": true
+  }
+]

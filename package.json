@@ -9,7 +9,8 @@
     "packages/xpanda-mcp",
     "packages/xpanda-web",
     "packages/xpanda-asm",
-    "packages/xpanda-index"
+    "packages/xpanda-index",
+    "packages/xpanda-workbench"
   ],
   "scripts": {
     "gen:opcodes": "yarn workspace xpanda-core gen:opcodes",
@@ -19,6 +20,7 @@
     "mcp": "yarn workspace xpanda-mcp mcp",
     "xpanda": "yarn workspace xpanda-cli xpanda",
     "web": "yarn workspace xpanda-web dev",
+    "workbench": "npm run dev --workspace=xpanda-workbench",
     "index": "yarn workspace xpanda-index index",
     "index:mcp": "yarn workspace xpanda-index mcp",
     "mcp:unified": "yarn workspace xpanda-index unified-mcp",

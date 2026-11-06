@@ -45,3 +45,22 @@ is needed. Old v1/v2 databases remain readable and are not silently rewritten.
 
 Before committing, follow `AGENTS.md` version rules. Keep SQLite/Node imports inside the
 index workspace, use only `xpanda-core` public imports, and leave generated opcodes untouched.
+
+## Browser and MCP entry points
+
+`packages/xpanda-index/src/unified-mcp.mjs` exposes 20 tools: the original ten
+live decompiler tools plus the ten persistent `code_index_*` queries. Its
+`--read-only` mode exposes only the index queries. The analyzer integration's
+`hap_prepare` and `hap_prepare_status` belong to the separate
+`Harmony_Hap_Analyzer` project and are not bundled by this repository.
+
+`packages/xpanda-workbench` is an independent browser application, registered
+with the root `workbench` script on port 5174. It imports the core package rather
+than the original Web application. The earlier original-Web reference/navigation
+work remains in `packages/xpanda-web` on port 5173. Neither application deploys
+a hosted site when its source is pushed.
+
+Workbench validation includes global-search/navigation regressions, real worker
+threads, a full Baidu index digest comparison, and conservative call-analysis
+fixtures. See its README and `docs/` validation records. Build artifacts, generated
+core declarations, local databases and application dumps must remain untracked.

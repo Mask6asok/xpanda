@@ -1,0 +1,11 @@
+{
+  "extends": "../xpanda-core/tsconfig.json",
+  "compilerOptions": {
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "rootDir": "../xpanda-core/src",
+    "outDir": ".types",
+    "types": ["node"]
+  },
+  "include": ["../xpanda-core/src/index.ts"]
+}

@@ -1,0 +1,27 @@
+{
+  "name": "xpanda-workbench",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Independent browser workbench powered by xpanda-core",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview --port 4174",
+    "typecheck": "tsc -p tsconfig.core-types.json && tsc --noEmit -p tsconfig.check.json",
+    "test": "node --import tsx --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "shiki": "^4.5.0",
+    "xpanda-core": "*"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@vitejs/plugin-react": "^4.2.0",
+    "typescript": "^5.3.3",
+    "vite": "^5.2.0"
+  }
+}

@@ -1,0 +1,91 @@
+{
+  "candidateCount": 54,
+  "methods": 49,
+  "instructions": 6282,
+  "payloadBytes": 523158,
+  "counts": {
+    "resolved": 0,
+    "possible": 0,
+    "unresolved": 54,
+    "excluded": 0
+  },
+  "indexedMs": 8680.247,
+  "prepareMs": 58.510707999999795,
+  "serialMs": 20.43145900000127,
+  "parallelColdMs": 44.31054199999926,
+  "parallelWarmMs": 10.60766700000022,
+  "parallelStats": {
+    "created": 2,
+    "posted": 98,
+    "received": 98,
+    "inFlight": 0,
+    "maxInFlight": 2,
+    "errors": []
+  },
+  "preparationIssueCount": 19,
+  "evidence": [
+    {
+      "source": "L&@bdbase-yysdk/entry/src/main/ets/debug/builtin/BasicInfoPanelItem&1.1.1;",
+      "method": "#*#copyToClipboard",
+      "pc": 85,
+      "relation": "unresolved",
+      "possibleMethodIds": [],
+      "receiverOrigin": [
+        "import pasteboard from \"@ohos:pasteboard\"",
+        "import pasteboard from \"@ohos:pasteboard\".getSystemPasteboard"
+      ],
+      "reasons": [
+        "Opaque/recursive callee return is not modeled",
+        "Property writes, escapes or opaque side effects may change dispatch",
+        "Unknown alternatives remain; listed method IDs are not exhaustive"
+      ]
+    },
+    {
+      "source": "L&@bdfeat-basic/common-scheme/src/main/ets/utils/SysUtilsPlugin&1.3.4;",
+      "method": "#~@0<#setClipboardData",
+      "pc": 68,
+      "relation": "unresolved",
+      "possibleMethodIds": [],
+      "receiverOrigin": [
+        "import pasteboard from \"@ohos:pasteboard\"",
+        "import pasteboard from \"@ohos:pasteboard\".getSystemPasteboard"
+      ],
+      "reasons": [
+        "Exception edges are not modeled; exception paths retain Unknown",
+        "Opaque/recursive callee return is not modeled",
+        "Property writes, escapes or opaque side effects may change dispatch",
+        "Unknown alternatives remain; listed method IDs are not exhaustive"
+      ]
+    },
+    {
+      "source": "L&@bdfeat-chatsearch/result-page/src/main/ets/ui/HistoryListComp&1.0.140;",
+      "method": "#~@0>@1*#",
+      "pc": 247,
+      "relation": "unresolved",
+      "possibleMethodIds": [],
+      "receiverOrigin": [],
+      "reasons": [
+        "Property writes, escapes or opaque side effects may change dispatch",
+        "Unknown alternatives remain; listed method IDs are not exhaustive",
+        "Unresolved value from ldlexvar"
+      ]
+    },
+    {
+      "source": "L&@bdbase/basic-ui-components/src/main/ets/BdActionBar/components/IconOnlyActionBar&2.5.38;",
+      "method": "#~@0>#updateUI",
+      "pc": 6,
+      "relation": "unresolved",
+      "possibleMethodIds": [
+        23041300
+      ],
+      "receiverOrigin": [
+        "owning-class-candidate:i:23041244:78:23041624"
+      ],
+      "reasons": [
+        "Class table candidate; own-field/prototype/constructor effects remain unknown",
+        "Declaring method table suggests this type; rebinding and subclasses remain unknown",
+        "Unknown alternatives remain; listed method IDs are not exhaustive"
+      ]
+    }
+  ]
+}

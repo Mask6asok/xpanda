@@ -1,0 +1,20 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>Reference Worker validation</title><h1>Reference Worker validation</h1><pre id="result">Running…</pre><script type="module">
+import { AnalysisClient } from "../src/client.ts";
+import fixture from "../../xpanda-core/test/resources/zhihupp0.59.hap?url";
+const output = document.querySelector("#result");
+const client = new AnalysisClient(message => { output.textContent = message; }, message => { output.textContent = "FAIL: " + message; });
+try {
+    const response = await fetch(fixture);
+    if (!response.ok) throw new Error(`Fixture request ${response.status}`);
+    const bytes = await response.arrayBuffer();
+    const [source] = await client.request("load", { name: "zhihupp0.59.hap", bytes, lenient: false }, [bytes]);
+    const request = { recordId: source.records[0].id, symbol: "constructor", group: "calls", offset: 0 };
+    const first = await client.request("references", request);
+    const second = await client.request("references", request);
+    if (first.summary.execution?.mode !== "parallel" || first.summary.execution.workers !== 2) throw new Error("Expected two browser subworkers");
+    if (first.summary.failedMethods !== 0) throw new Error("Unexpected failed methods");
+    if (JSON.stringify(first) !== JSON.stringify(second)) throw new Error("Cached result differs");
+    output.textContent = "PASS\n" + JSON.stringify(first.summary, null, 2) + "\nRepeated reference query reused the same index.";
+} catch (error) { output.textContent = "FAIL: " + error.stack; }
+finally { client.dispose(); }
+</script></html>
